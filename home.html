@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Student Campus & Accommodation Portal</title>
+    
+    <!-- External CSS with Cache-Buster -->
+    <link rel="stylesheet" href="style.css?v=5.0">
+
+    <!-- External SDKs -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+    <!-- Sticky Navigation -->
+    <header>
+        <div class="navbar">
+            <a href="#homeSection" class="brand-logo">🏛️ University Hostel Portal</a>
+            <ul class="nav-links">
+                <li><a href="#homeSection">Home & Rules</a></li>
+                <li><a href="#applicationSection">Apply for Room</a></li>
+                <li><a href="#paymentSection">Pay Fees</a></li>
+                <li><a href="#trackingSection">Track Status</a></li>
+                <li><a href="#maintenanceSection">Maintenance Desk</a></li>
+                <li><a href="index.html" class="nav-logout">🚪 Sign Out</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <div class="main-container" id="homeSection">
+        
+        <!-- Welcome Hero Banner -->
+        <div class="hero">
+            <div>
+                <h1>Welcome to Student Residential Services</h1>
+                <p>Official residential accommodation portal. Please review the essential campus rules and hostel guidelines below before submitting your room allocation application.</p>
+            </div>
+            <div class="hero-cycle-badge">
+                <span class="badge-cycle">Academic Cycle: 2026–2027</span>
+            </div>
+        </div>
+
+        <!-- ========================================================
+             STEP 1: RULES, GUIDELINES & EDUCATION SUPPORT (AT START)
+             ======================================================== -->
+        <div class="info-section">
+            <div class="info-card">
+                <h2>📚 Campus Academic & Residential Facilities</h2>
+                <ul class="edu-points">
+                    <li>
+                        <span>🔹</span>
+                        <div><strong>High-Speed Campus LAN & Wi-Fi:</strong> 24/7 gigabit connectivity inside all hostel wings with direct access to university research archives and e-libraries.</div>
+                    </li>
+                    <li>
+                        <span>🔹</span>
+                        <div><strong>Central Library Study Access:</strong> Connected by illuminated secure walking corridors, operating until <strong>11:30 PM</strong> with AC reading zones.</div>
+                    </li>
+                    <li>
+                        <span>🔹</span>
+                        <div><strong>Counseling & Faculty Mentorship:</strong> Resident wardens and department faculties host weekly counseling desks every Wednesday evening in student common halls.</div>
+                    </li>
+                    <li>
+                        <span>🔹</span>
+                        <div><strong>Digital Records & Verification:</strong> Every allocation, fee receipt, and maintenance grievance is recorded securely on Cloud Firestore.</div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h2>⏱️ Essential Hostel Code & Timings</h2>
+                <div class="guidelines-text">
+                    <p>🕒 <strong>Curfew & Entry Deadline:</strong> 09:30 PM sharp (Strict biometric logging)</p>
+                    <p>🍽️ <strong>Mess Dining Schedule:</strong> 
+                        <br>&bull; Breakfast: 07:30 AM - 09:30 AM
+                        <br>&bull; Lunch: 12:30 PM - 02:30 PM
+                        <br>&bull; Dinner: 07:30 PM - 09:30 PM
+                    </p>
+                    <p>🛡️ <strong>Safety Policy:</strong> Zero ragging tolerance; 24x7 security turnstiles & CCTV surveillance active.</p>
+                    <p>📋 <strong>Leave Pass:</strong> Night-out pass must be sanctioned 24 hours prior via Warden desk.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Action Navigation Cards Grid -->
+        <div class="quick-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
+            <a href="#applicationSection" class="feature-card" style="border: 2px solid #2563EB;">
+                <div class="icon">📝</div>
+                <h3 style="color: #2563EB;">Apply for Room</h3>
+                <p>View vacancy & book your hostel room</p>
+            </a>
+            <a href="#paymentSection" class="feature-card">
+                <div class="icon">💳</div>
+                <h3>Fee Payment</h3>
+                <p>Instant UPI/Card checkout & invoice</p>
+            </a>
+            <a href="#trackingSection" class="feature-card">
+                <div class="icon">🔍</div>
+                <h3>Allotment Status</h3>
+                <p>Track allocation & assigned room no</p>
+            </a>
+            <a href="#maintenanceSection" class="feature-card">
+                <div class="icon">🛠️</div>
+                <h3>Maintenance Desk</h3>
+                <p>Report electric, water or furniture issues</p>
+            </a>
+        </div>
+
+        <!-- ========================================================
+             STEP 2 & 3: AVAILABLE ROOMS FIRST -> THEN APPLICATION FORM
+             ======================================================== -->
+        <div class="app-section" id="applicationSection">
+            
+            <!-- Available Rooms Sub-Section (Upar Dikh Raha Hai) -->
+            <div style="margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.8rem;">
+                    <div>
+                        <h2>📊 Real-Time Room Availability & Vacancy</h2>
+                        <p class="subtext" style="margin-bottom: 0;">Check seat availability across blocks before choosing your preference below.</p>
+                    </div>
+                    <button type="button" onclick="loadRoomAvailability()" style="padding: 0.6rem 1.2rem; cursor: pointer; border-radius: 6px; border: none; background: #1E3A8A; color: #fff; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
+                        🔄 Refresh Vacancy
+                    </button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <!-- Block A -->
+                    <div style="background: #F8FAFC; border: 1px solid #CBD5E1; padding: 1.2rem; border-radius: 10px;">
+                        <div style="font-weight: 700; color: #0F172A; font-size: 1.05rem;">🏢 Block A (Boys AC)</div>
+                        <div style="font-size: 0.85rem; color: #64748B; margin-top: 0.2rem;">Single Occupancy Rooms</div>
+                        <div style="margin-top: 0.8rem; display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #E2E8F0;">
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #1E293B;">Available Seats:</span>
+                            <span class="badge badge-approved" id="avail-block-a" style="font-size: 0.95rem;">50 Vacant</span>
+                        </div>
+                        <div style="font-size: 0.82rem; color: #64748B; margin-top: 0.6rem; text-align: right;">Total Capacity: <strong>50 Rooms</strong></div>
+                    </div>
+
+                    <!-- Block B -->
+                    <div style="background: #F8FAFC; border: 1px solid #CBD5E1; padding: 1.2rem; border-radius: 10px;">
+                        <div style="font-weight: 700; color: #0F172A; font-size: 1.05rem;">🏢 Block B (Boys Non-AC)</div>
+                        <div style="font-size: 0.85rem; color: #64748B; margin-top: 0.2rem;">Triple Sharing Rooms</div>
+                        <div style="margin-top: 0.8rem; display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #E2E8F0;">
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #1E293B;">Available Seats:</span>
+                            <span class="badge badge-approved" id="avail-block-b" style="font-size: 0.95rem;">50 Vacant</span>
+                        </div>
+                        <div style="font-size: 0.82rem; color: #64748B; margin-top: 0.6rem; text-align: right;">Total Capacity: <strong>50 Rooms</strong></div>
+                    </div>
+
+                    <!-- Block C -->
+                    <div style="background: #F8FAFC; border: 1px solid #CBD5E1; padding: 1.2rem; border-radius: 10px;">
+                        <div style="font-weight: 700; color: #0F172A; font-size: 1.05rem;">🌸 Block C (Girls AC)</div>
+                        <div style="font-size: 0.85rem; color: #64748B; margin-top: 0.2rem;">Double Sharing AC</div>
+                        <div style="margin-top: 0.8rem; display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #E2E8F0;">
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #1E293B;">Available Seats:</span>
+                            <span class="badge badge-approved" id="avail-block-c" style="font-size: 0.95rem;">50 Vacant</span>
+                        </div>
+                        <div style="font-size: 0.82rem; color: #64748B; margin-top: 0.6rem; text-align: right;">Total Capacity: <strong>50 Rooms</strong></div>
+                    </div>
+
+                    <!-- Block D -->
+                    <div style="background: #F8FAFC; border: 1px solid #CBD5E1; padding: 1.2rem; border-radius: 10px;">
+                        <div style="font-weight: 700; color: #0F172A; font-size: 1.05rem;">🌸 Block D (Girls Non-AC)</div>
+                        <div style="font-size: 0.85rem; color: #64748B; margin-top: 0.2rem;">Triple Sharing Non-AC</div>
+                        <div style="margin-top: 0.8rem; display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #E2E8F0;">
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #1E293B;">Available Seats:</span>
+                            <span class="badge badge-approved" id="avail-block-d" style="font-size: 0.95rem;">50 Vacant</span>
+                        </div>
+                        <div style="font-size: 0.82rem; color: #64748B; margin-top: 0.6rem; text-align: right;">Total Capacity: <strong>50 Rooms</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #E2E8F0; margin-bottom: 2rem;">
+
+            <!-- Student Room Application Form (Enter Key Supported) -->
+            <h2>Submit Hostel Room Application</h2>
+            <p class="subtext">Fill in your details below. Press <strong>Enter</strong> at any field to submit and proceed to payment checkout.</p>
+
+            <form id="roomAppForm" class="form-grid">
+                <div class="form-group">
+                    <label>Student Roll Number *</label>
+                    <input type="text" id="appRollNo" placeholder="e.g. 2026CS101" required>
+                </div>
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="appFullName" placeholder="e.g. John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label>University Email *</label>
+                    <input type="email" id="appEmail" placeholder="student@university.edu" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" id="appPhone" placeholder="+91 9876543210" required>
+                </div>
+                <div class="form-group">
+                    <label>Department / Stream *</label>
+                    <select id="appDept" required>
+                        <option value="Computer Science">Computer Science & Engineering</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Electronics">Electronics & Communication</option>
+                        <option value="Mechanical">Mechanical Engineering</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Hostel Block Preference *</label>
+                    <select id="appBlock" required>
+                        <option value="Block A (Boys AC)">Block A (Boys AC)</option>
+                        <option value="Block B (Boys Non-AC)">Block B (Boys Non-AC)</option>
+                        <option value="Block C (Girls AC)">Block C (Girls AC)</option>
+                        <option value="Block D (Girls Non-AC)">Block D (Girls Non-AC)</option>
+                    </select>
+                </div>
+                <div class="form-group form-group-full">
+                    <label>Room Category & Fee Structure *</label>
+                    <select id="appRoomType" required>
+                        <option value="Single AC (Full Year)" data-amount="8000">Single Occupancy AC — ₹8,000</option>
+                        <option value="Double AC (Full Year)" data-amount="4000">Double Sharing AC — ₹4,000</option>
+                        <option value="Triple Non-AC (Full Year)" data-amount="3000">Triple Sharing Non-AC — ₹3,000</option>
+                    </select>
+                </div>
+                <button type="submit" id="btnSubmitApp" class="btn-submit">Submit Application & Proceed to Payment &rarr;</button>
+            </form>
+        </div>
+
+        <!-- ========================================================
+             STEP 4: PAYMENT CHECKOUT & TAX INVOICE
+             ======================================================== -->
+        <div class="app-section" id="paymentSection">
+            <h2>Hostel Fee Online Payment (Razorpay Checkout)</h2>
+            <p class="subtext">Auto-populated from your room application submission above.</p>
+
+            <form id="feePaymentForm" class="form-grid">
+                <div class="form-group">
+                    <label>Roll Number</label>
+                    <input type="text" id="payRollNo" readonly class="input-readonly">
+                </div>
+                <div class="form-group">
+                    <label>Student Name</label>
+                    <input type="text" id="payFullName" readonly class="input-readonly">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="payEmail" readonly class="input-readonly">
+                </div>
+                <div class="form-group">
+                    <label>Contact Phone</label>
+                    <input type="tel" id="payPhone" readonly class="input-readonly">
+                </div>
+                <div class="form-group">
+                    <label>Fee Category</label>
+                    <input type="text" id="payCategory" readonly class="input-readonly">
+                </div>
+                <div class="form-group">
+                    <label>Total Fee Payable (₹ INR)</label>
+                    <input type="number" id="payAmount" readonly class="input-amount-highlight">
+                </div>
+                <button type="submit" id="btnPay" class="btn-submit btn-success">💳 Pay Now via Razorpay</button>
+            </form>
+
+            <!-- Digital Invoice Display Container -->
+            <div id="invoiceContainer">
+                <div class="invoice-box" id="invoiceCard">
+                    <div class="inv-header">
+                        <div>
+                            <h2>UNIVERSITY HOSTEL ACCOMMODATION</h2>
+                            <p class="inv-subtext">Official Digital Fee Receipt & Tax Invoice</p>
+                        </div>
+                        <div class="inv-badge-wrap">
+                            <span class="badge badge-approved">✓ PAYMENT COMPLETED</span>
+                            <p class="inv-date" id="invDate">Date: 27 Sep 2026</p>
+                        </div>
+                    </div>
+
+                    <div class="inv-details-grid">
+                        <div>
+                            <strong>Billed To:</strong><br>
+                            Student: <span id="invStudentName">---</span><br>
+                            Roll Number: <span id="invRollNo">---</span><br>
+                            Email: <span id="invEmail">---</span>
+                        </div>
+                        <div class="inv-right-details">
+                            <strong>Transaction Details:</strong><br>
+                            Payment Gateway: Razorpay Standard<br>
+                            Transaction ID: <strong id="invTxnId" class="inv-txn-id">---</strong><br>
+                            Status: <strong>PAID / VERIFIED</strong>
+                        </div>
+                    </div>
+
+                    <div class="inv-table-wrapper">
+                        <table class="inv-table">
+                            <thead>
+                                <tr>
+                                    <th>Item Description</th>
+                                    <th>Academic Session</th>
+                                    <th>Amount Paid</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="invCategory">Hostel Room Allotment Fee</td>
+                                    <td>2026 - 2027</td>
+                                    <td><strong id="invAmount">₹0</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="inv-total-row">
+                        Total Amount Paid: <strong id="invTotal" class="inv-total-highlight">₹0</strong>
+                    </div>
+                </div>
+
+                <div class="invoice-actions">
+                    <button type="button" class="btn-download" onclick="downloadInvoicePDF()">📥 Download Invoice as PDF</button>
+                    <button type="button" class="btn-return" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">🏠 Return to Home Page</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================
+             STATUS TRACKING (Enter Key Enabled Search)
+             ======================================================== -->
+        <div class="app-section" id="trackingSection">
+            <h2>Track Live Room Allocation Status</h2>
+            <p class="subtext">Type your Roll Number and press <strong>Enter</strong> to fetch allotment details.</p>
+
+            <form id="trackingSearchForm" class="search-input-group" onsubmit="event.preventDefault(); checkStatusLive();">
+                <input type="text" id="trackRollInput" placeholder="Enter Roll Number (e.g. 2026CS101) & press Enter...">
+                <button type="submit" class="btn-submit btn-search">Search Status</button>
+            </form>
+            <div id="statusResultBox" class="status-box"></div>
+        </div>
+
+        <!-- ========================================================
+             MAINTENANCE GRIEVANCE DESK (Enter Key Enabled)
+             ======================================================== -->
+        <div class="app-section" id="maintenanceSection">
+            <h2>Maintenance & Grievance Desk</h2>
+            <p class="subtext">Submit issues regarding electrical, washroom, furniture or network repairs directly to staff.</p>
+
+            <form id="grievanceForm" class="form-grid">
+                <div class="form-group">
+                    <label>Student Roll Number *</label>
+                    <input type="text" id="gRollNo" placeholder="e.g. 2026CS101" required>
+                </div>
+                <div class="form-group">
+                    <label>Allocated Room Number *</label>
+                    <input type="text" id="gRoomNo" placeholder="e.g. A-304" required>
+                </div>
+                <div class="form-group">
+                    <label>Category *</label>
+                    <select id="gCategory" required>
+                        <option value="Electrical">Electrical (Fan / Light / Switch)</option>
+                        <option value="Plumbing">Plumbing & Washroom</option>
+                        <option value="Carpentry">Furniture & Bed Repair</option>
+                        <option value="Internet">Wi-Fi & LAN Network</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Urgency Level *</label>
+                    <select id="gUrgency" required>
+                        <option value="Normal">Normal (Within 48 hrs)</option>
+                        <option value="High">High (Within 24 hrs)</option>
+                        <option value="Emergency">Emergency</option>
+                    </select>
+                </div>
+                <div class="form-group form-group-full">
+                    <label>Problem Description *</label>
+                    <textarea id="gDescription" rows="3" placeholder="Provide clear details regarding the issue..." required></textarea>
+                </div>
+                <button type="submit" id="btnGrievance" class="btn-submit">Submit Maintenance Request</button>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- External JavaScript File -->
+    <script src="script.js"></script>
+</body>
+</html>

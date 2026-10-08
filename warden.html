@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warden Control Desk - University Housing</title>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+
+    <!-- SheetJS (Excel & CSV Export Engine) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #0F172A;
+            --accent: #2563EB;
+            --bg-light: #F8FAFC;
+            --surface: #FFFFFF;
+            --border: #CBD5E1;
+            --text: #1E293B;
+            --text-muted: #64748B;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: var(--bg-light); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+        header {
+            background: var(--primary);
+            color: #fff;
+            padding: 1.2rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title { font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+        .signout-link { color: #F87171; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+
+        .container {
+            max-width: 1300px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            width: 100%;
+        }
+
+        .tabs-nav {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 0.8rem 1.4rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        .dashboard-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.8rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            margin-bottom: 2rem;
+        }
+
+        .card-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .card-title { font-size: 1.3rem; color: var(--primary); margin-bottom: 0.3rem; }
+        .card-desc { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0; }
+
+        /* SEARCH & FILTER CONTROLS */
+        .filter-toolbar {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #F8FAFC;
+            padding: 0.9rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 1.2rem;
+        }
+
+        .filter-input {
+            padding: 0.55rem 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            min-width: 260px;
+            flex: 1;
+        }
+
+        .filter-select {
+            padding: 0.55rem 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            background: #fff;
+            min-width: 170px;
+        }
+
+        .btn-filter-reset {
+            padding: 0.55rem 0.9rem;
+            background: #E2E8F0;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #334155;
+        }
+
+        .btn-filter-reset:hover { background: #CBD5E1; }
+
+        .btn-export {
+            background: #059669;
+            color: #fff;
+            padding: 0.6rem 1.1rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: background 0.2s;
+        }
+
+        .btn-export:hover { background: #047857; }
+        .btn-export-csv { background: #0284C7; }
+        .btn-export-csv:hover { background: #0369A1; }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .data-table th, .data-table td {
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .data-table th {
+            background: #F1F5F9;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .badge-pending, .badge-open { background: #FEF3C7; color: #92400E; }
+        .badge-approved, .badge-resolved { background: #D1FAE5; color: #065F46; }
+        .badge-rejected { background: #FEE2E2; color: #991B1B; }
+
+        .action-row {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+        }
+
+        .room-input {
+            width: 95px;
+            padding: 0.4rem 0.55rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .room-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-action {
+            padding: 0.4rem 0.75rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        .btn-approve { background: var(--success); }
+        .btn-reject { background: var(--danger); }
+        .btn-resolve { background: #0284C7; }
+
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">🛡️ University Hostel - Warden Administration</div>
+        <div>
+            <a href="index.html" class="signout-link">Sign Out</a>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- Tab Navigation -->
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchWardenTab('applications', event)">📝 Room Applications</button>
+            <button class="tab-btn" onclick="switchWardenTab('payments', event)">💳 Fee Transactions</button>
+            <button class="tab-btn" onclick="switchWardenTab('maintenance', event)">🛠️ Maintenance Tickets</button>
+        </div>
+
+        <!-- 1. Room Allotments Tab -->
+        <div id="tab-applications" class="tab-pane active">
+            <div class="dashboard-card">
+                <div class="card-header-flex">
+                    <div>
+                        <h2 class="card-title">Student Room Applications</h2>
+                        <p class="card-desc">Type Room No and press <strong>Enter</strong> to approve instantly.</p>
+                    </div>
+                    <button type="button" class="btn-export" onclick="exportApplicationsToExcel()">
+                        📊 Export Allotments to Excel (.xlsx)
+                    </button>
+                </div>
+
+                <!-- SEARCH & FILTER TOOLBAR -->
+                <div class="filter-toolbar">
+                    <input type="text" id="appSearchInput" class="filter-input" placeholder="🔍 Search Roll No or Student Name..." oninput="applyApplicationFilters()">
+                    <select id="appStatusFilter" class="filter-select" onchange="applyApplicationFilters()">
+                        <option value="ALL">Filter Status: All</option>
+                        <option value="Pending Review">Pending Review</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                    <select id="appBlockFilter" class="filter-select" onchange="applyApplicationFilters()">
+                        <option value="ALL">Filter Block: All</option>
+                        <option value="Block A (Boys Hostel)">Block A (Boys Hostel)</option>
+                        <option value="Block B (Boys Hostel)">Block B (Boys Hostel)</option>
+                        <option value="Block C (Girls Hostel)">Block C (Girls Hostel)</option>
+                        <option value="Block D (Girls Hostel)">Block D (Girls Hostel)</option>
+                    </select>
+                    <button type="button" class="btn-filter-reset" onclick="resetApplicationFilters()">Reset Filters</button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="tableApplications">
+                        <thead>
+                            <tr>
+                                <th>Submission Date</th>
+                                <th>Roll No</th>
+                                <th>Student Name</th>
+                                <th>Hostel Block</th>
+                                <th>Sharing Category</th>
+                                <th>Current Status</th>
+                                <th>Assign Room No (Enter to Approve)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applicationsBody">
+                            <tr><td colspan="8" class="empty-state">Loading applications from Firebase...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Fee Payments Tab -->
+        <div id="tab-payments" class="tab-pane">
+            <div class="dashboard-card">
+                <div class="card-header-flex">
+                    <div>
+                        <h2 class="card-title">Real-Time Fee Payments</h2>
+                        <p class="card-desc">All successful Razorpay fee receipts recorded across student applications.</p>
+                    </div>
+                    <button type="button" class="btn-export btn-export-csv" onclick="exportPaymentsToCSV()">
+                        📄 Export Fee Ledger to CSV (.csv)
+                    </button>
+                </div>
+
+                <!-- PAYMENTS SEARCH -->
+                <div class="filter-toolbar">
+                    <input type="text" id="paySearchInput" class="filter-input" placeholder="🔍 Search Txn ID, Roll No or Student Name..." oninput="applyPaymentFilters()">
+                    <button type="button" class="btn-filter-reset" onclick="resetPaymentFilters()">Reset Search</button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="tablePayments">
+                        <thead>
+                            <tr>
+                                <th>Payment Date</th>
+                                <th>Transaction ID</th>
+                                <th>Roll Number</th>
+                                <th>Student Name</th>
+                                <th>Fee Category</th>
+                                <th>Amount Paid</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentsBody">
+                            <tr><td colspan="7" class="empty-state">Loading payment ledger...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Maintenance Requests Tab -->
+        <div id="tab-maintenance" class="tab-pane">
+            <div class="dashboard-card">
+                <div class="card-header-flex">
+                    <div>
+                        <h2 class="card-title">Maintenance & Complaints Desk</h2>
+                        <p class="card-desc">Track open repair tickets and mark them resolved once rectified.</p>
+                    </div>
+                    <button type="button" class="btn-export" onclick="exportMaintenanceToExcel()">
+                        📊 Export Tickets to Excel (.xlsx)
+                    </button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="tableMaintenance">
+                        <thead>
+                            <tr>
+                                <th>Reported Date</th>
+                                <th>Roll No</th>
+                                <th>Room No</th>
+                                <th>Category</th>
+                                <th>Urgency</th>
+                                <th>Problem Description</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="maintenanceBody">
+                            <tr><td colspan="8" class="empty-state">Loading maintenance tickets...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdhh9aoT-pgtW7ZqiIjEpPb9pw8xdGTCI",
+            authDomain: "hostel-portal-f74e2.firebaseapp.com",
+            projectId: "hostel-portal-f74e2",
+            storageBucket: "hostel-portal-f74e2.firebasestorage.app",
+            messagingSenderId: "834609049326",
+            appId: "1:834609049326:web:740e899131a2bd11954dff",
+            measurementId: "G-5ENL3C3MHX"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // Data caches
+        let rawApplicationsData = [];
+        let filteredApplicationsData = [];
+        let rawPaymentsData = [];
+        let filteredPaymentsData = [];
+        let rawMaintenanceData = [];
+
+        function switchWardenTab(tabKey, ev) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+            if (ev && ev.target) {
+                ev.target.classList.add('active');
+            }
+            document.getElementById(`tab-${tabKey}`).classList.add('active');
+        }
+
+        function formatFirestoreDate(timestamp) {
+            if (!timestamp) return 'Just now';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // 1. Load Applications
+        function loadApplications() {
+            db.collection("room_applications")
+              .onSnapshot(snapshot => {
+                if (snapshot.empty) {
+                    rawApplicationsData = [];
+                    filteredApplicationsData = [];
+                    renderApplicationsTable([]);
+                    return;
+                }
+
+                let docs = [];
+                snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+                docs.sort((a, b) => {
+                    const timeA = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+                    const timeB = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+                    return timeB - timeA;
+                });
+
+                rawApplicationsData = docs;
+                applyApplicationFilters();
+            }, err => {
+                console.error("Applications listener error:", err);
+            });
+        }
+
+        function applyApplicationFilters() {
+            const query = (document.getElementById('appSearchInput').value || '').trim().toLowerCase();
+            const statusFilter = document.getElementById('appStatusFilter').value;
+            const blockFilter = document.getElementById('appBlockFilter').value;
+
+            filteredApplicationsData = rawApplicationsData.filter(item => {
+                const studentId = (item.studentId || '').toLowerCase();
+                const fullName = (item.fullName || '').toLowerCase();
+                const status = item.applicationStatus || 'Pending Review';
+                const block = item.hostelBlock || '';
+
+                const matchesQuery = query === '' || studentId.includes(query) || fullName.includes(query);
+                const matchesStatus = statusFilter === 'ALL' || status === statusFilter;
+                
+                let matchesBlock = true;
+                if (blockFilter !== 'ALL') {
+                    matchesBlock = block.includes(blockFilter.split(' ')[0]);
+                }
+
+                return matchesQuery && matchesStatus && matchesBlock;
+            });
+
+            renderApplicationsTable(filteredApplicationsData);
+        }
+
+        function resetApplicationFilters() {
+            document.getElementById('appSearchInput').value = '';
+            document.getElementById('appStatusFilter').value = 'ALL';
+            document.getElementById('appBlockFilter').value = 'ALL';
+            applyApplicationFilters();
+        }
+
+        function renderApplicationsTable(docs) {
+            const tbody = document.getElementById('applicationsBody');
+            if (!docs || docs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="empty-state">No matching applications found.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            docs.forEach(data => {
+                const status = data.applicationStatus || 'Pending Review';
+                const badgeClass = status === 'Approved' ? 'badge-approved' : (status === 'Rejected' ? 'badge-rejected' : 'badge-pending');
+                const formattedDate = formatFirestoreDate(data.createdAt);
+
+                html += `
+                    <tr>
+                        <td><small style="color:#64748B;">${formattedDate}</small></td>
+                        <td><strong>${data.studentId || '---'}</strong></td>
+                        <td>${data.fullName || '---'}</td>
+                        <td>${data.hostelBlock || '---'}</td>
+                        <td>${data.roomType || '---'}</td>
+                        <td><span class="badge ${badgeClass}">${status}</span></td>
+                        <td>
+                            <input type="text" 
+                                   id="roomInput_${data.id}" 
+                                   class="room-input" 
+                                   placeholder="e.g. A-201" 
+                                   value="${data.allocatedRoomNo || ''}"
+                                   onkeydown="handleRoomInputEnter(event, '${data.id}')">
+                        </td>
+                        <td>
+                            <div class="action-row">
+                                <button class="btn-action btn-approve" onclick="updateAppStatus('${data.id}', 'Approved')">Approve</button>
+                                <button class="btn-action btn-reject" onclick="updateAppStatus('${data.id}', 'Rejected')">Reject</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function handleRoomInputEnter(event, docId) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                updateAppStatus(docId, 'Approved');
+            }
+        }
+
+        async function updateAppStatus(docId, newStatus) {
+            const roomInputField = document.getElementById(`roomInput_${docId}`);
+            const roomNo = roomInputField ? roomInputField.value.trim() : '';
+
+            if (newStatus === 'Approved' && !roomNo) {
+                if (roomInputField) roomInputField.focus();
+                return alert("Please enter an allocated Room Number before approving!");
+            }
+
+            try {
+                await db.collection("room_applications").doc(docId).update({
+                    applicationStatus: newStatus,
+                    allocatedRoomNo: newStatus === 'Approved' ? roomNo : ''
+                });
+                alert(`Application marked as ${newStatus}!`);
+            } catch (err) {
+                alert("Error updating status: " + err.message);
+            }
+        }
+
+        // 2. Load Fee Payments
+        function loadPayments() {
+            db.collection("fee_payments")
+              .onSnapshot(snapshot => {
+                if (snapshot.empty) {
+                    rawPaymentsData = [];
+                    filteredPaymentsData = [];
+                    renderPaymentsTable([]);
+                    return;
+                }
+
+                let docs = [];
+                snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+                docs.sort((a, b) => {
+                    const timeA = a.paidAt && a.paidAt.toMillis ? a.paidAt.toMillis() : 0;
+                    const timeB = b.paidAt && b.paidAt.toMillis ? b.paidAt.toMillis() : 0;
+                    return timeB - timeA;
+                });
+
+                rawPaymentsData = docs;
+                applyPaymentFilters();
+            }, err => {
+                console.error("Payments listener error:", err);
+            });
+        }
+
+        function applyPaymentFilters() {
+            const query = (document.getElementById('paySearchInput').value || '').trim().toLowerCase();
+            filteredPaymentsData = rawPaymentsData.filter(p => {
+                const txn = (p.paymentId || '').toLowerCase();
+                const roll = (p.studentId || '').toLowerCase();
+                const name = (p.fullName || '').toLowerCase();
+                return query === '' || txn.includes(query) || roll.includes(query) || name.includes(query);
+            });
+            renderPaymentsTable(filteredPaymentsData);
+        }
+
+        function resetPaymentFilters() {
+            document.getElementById('paySearchInput').value = '';
+            applyPaymentFilters();
+        }
+
+        function renderPaymentsTable(docs) {
+            const tbody = document.getElementById('paymentsBody');
+            if (!docs || docs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No payment records match your search.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            docs.forEach(p => {
+                const formattedDate = formatFirestoreDate(p.paidAt);
+                html += `
+                    <tr>
+                        <td><small style="color:#64748B;">${formattedDate}</small></td>
+                        <td><code>${p.paymentId || '---'}</code></td>
+                        <td><strong>${p.studentId || '---'}</strong></td>
+                        <td>${p.fullName || '---'}</td>
+                        <td>${p.feeCategory || 'Hostel Fee'}</td>
+                        <td><strong>₹${Number(p.amountPaid || 0).toLocaleString()}</strong></td>
+                        <td><span class="badge badge-approved">${p.paymentStatus || 'Success'}</span></td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // 3. Load Maintenance Requests
+        function loadMaintenance() {
+            db.collection("maintenance_requests")
+              .onSnapshot(snapshot => {
+                const tbody = document.getElementById('maintenanceBody');
+                if (snapshot.empty) {
+                    rawMaintenanceData = [];
+                    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">No maintenance complaints registered.</td></tr>`;
+                    return;
+                }
+
+                let docs = [];
+                snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+                docs.sort((a, b) => {
+                    const timeA = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+                    const timeB = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+                    return timeB - timeA;
+                });
+
+                rawMaintenanceData = docs;
+
+                let html = '';
+                docs.forEach(m => {
+                    const status = m.status || 'Open';
+                    const badgeClass = status === 'Resolved' ? 'badge-resolved' : 'badge-open';
+                    const formattedDate = formatFirestoreDate(m.createdAt);
+
+                    html += `
+                        <tr>
+                            <td><small style="color:#64748B;">${formattedDate}</small></td>
+                            <td><strong>${m.studentId || '---'}</strong></td>
+                            <td>${m.roomNo || '---'}</td>
+                            <td>${m.category || '---'}</td>
+                            <td>${m.urgency || 'Normal'}</td>
+                            <td>${m.description || '---'}</td>
+                            <td><span class="badge ${badgeClass}">${status}</span></td>
+                            <td>
+                                ${status !== 'Resolved' ? `<button class="btn-action btn-resolve" onclick="resolveTicket('${m.id}')">Mark Resolved</button>` : '<span style="color: #10B981; font-weight:600;">Fixed</span>'}
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            }, err => {
+                console.error("Maintenance listener error:", err);
+            });
+        }
+
+        async function resolveTicket(docId) {
+            try {
+                await db.collection("maintenance_requests").doc(docId).update({
+                    status: 'Resolved'
+                });
+                alert("Ticket marked as Resolved!");
+            } catch (err) {
+                alert("Error updating ticket: " + err.message);
+            }
+        }
+
+        // Export Allotments to Excel (Exports active filtered view)
+        function exportApplicationsToExcel() {
+            const dataToExport = filteredApplicationsData.length > 0 ? filteredApplicationsData : rawApplicationsData;
+            if (!dataToExport || dataToExport.length === 0) {
+                return alert("No room application records available to export!");
+            }
+
+            const exportRows = dataToExport.map((item, index) => ({
+                "S.No": index + 1,
+                "Submission Date": formatFirestoreDate(item.createdAt),
+                "Roll Number": item.studentId || "N/A",
+                "Student Name": item.fullName || "N/A",
+                "Email": item.email || "N/A",
+                "Phone": item.phone || "N/A",
+                "Department": item.department || "N/A",
+                "Hostel Block": item.hostelBlock || "N/A",
+                "Room Type": item.roomType || "N/A",
+                "Fee (INR)": item.feeAmount || 0,
+                "Status": item.applicationStatus || "Pending Review",
+                "Allocated Room": item.allocatedRoomNo || "Unassigned"
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Room_Allotments");
+
+            const colWidths = [
+                { wch: 6 },  { wch: 20 }, { wch: 14 }, { wch: 22 }, 
+                { wch: 26 }, { wch: 14 }, { wch: 24 }, { wch: 24 }, 
+                { wch: 26 }, { wch: 12 }, { wch: 16 }, { wch: 16 }
+            ];
+            worksheet['!cols'] = colWidths;
+
+            const dateStr = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(workbook, `Hostel_Room_Allotments_${dateStr}.xlsx`);
+        }
+
+        // Export Fee Ledger to CSV
+        function exportPaymentsToCSV() {
+            const dataToExport = filteredPaymentsData.length > 0 ? filteredPaymentsData : rawPaymentsData;
+            if (!dataToExport || dataToExport.length === 0) {
+                return alert("No fee transaction records available to export!");
+            }
+
+            const exportRows = dataToExport.map((p, index) => ({
+                "S.No": index + 1,
+                "Payment Date": formatFirestoreDate(p.paidAt),
+                "Transaction ID": p.paymentId || "N/A",
+                "Roll Number": p.studentId || "N/A",
+                "Student Name": p.fullName || "N/A",
+                "Email": p.email || "N/A",
+                "Contact": p.phone || "N/A",
+                "Fee Category": p.feeCategory || "Hostel Fee",
+                "Amount Paid (INR)": p.amountPaid || 0,
+                "Payment Status": p.paymentStatus || "Success"
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportRows);
+            const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+
+            const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const dateStr = new Date().toISOString().slice(0, 10);
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", `Hostel_Fee_Ledger_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Export Maintenance Tickets to Excel
+        function exportMaintenanceToExcel() {
+            if (!rawMaintenanceData || rawMaintenanceData.length === 0) {
+                return alert("No maintenance tickets available to export!");
+            }
+
+            const exportRows = rawMaintenanceData.map((m, index) => ({
+                "S.No": index + 1,
+                "Reported Date": formatFirestoreDate(m.createdAt),
+                "Roll Number": m.studentId || "N/A",
+                "Room Number": m.roomNo || "N/A",
+                "Issue Category": m.category || "N/A",
+                "Urgency Level": m.urgency || "Normal",
+                "Problem Description": m.description || "N/A",
+                "Current Status": m.status || "Open"
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Maintenance_Logs");
+
+            const dateStr = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(workbook, `Hostel_Maintenance_Tickets_${dateStr}.xlsx`);
+        }
+
+        window.onload = function() {
+            loadApplications();
+            loadPayments();
+            loadMaintenance();
+        };
+    </script>
+</body>
+</html>

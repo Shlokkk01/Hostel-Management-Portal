@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Hostel Accommodation Portal - Sign In</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #1E3A8A;
+            --primary-dark: #0F172A;
+            --secondary: #2563EB;
+            --bg-light: #F8FAFC;
+            --surface: #FFFFFF;
+            --border: #E2E8F0;
+            --text: #1E293B;
+            --text-muted: #64748B;
+            --success: #10B981;
+            --danger: #EF4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-light); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
+
+        .auth-container {
+            width: 100%;
+            max-width: 440px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            padding: 2.2rem;
+        }
+
+        .portal-header {
+            text-align: center;
+            margin-bottom: 1.8rem;
+        }
+
+        .portal-header h1 {
+            font-size: 1.55rem;
+            color: var(--primary-dark);
+            margin-bottom: 0.35rem;
+        }
+
+        .portal-header p {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+
+        /* Role Switcher Tabs */
+        .role-switch {
+            display: flex;
+            background: #F1F5F9;
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 0.65rem;
+            border: none;
+            background: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .role-btn.active {
+            background: #fff;
+            color: var(--primary);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1.1rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            color: var(--text);
+        }
+
+        input {
+            padding: 0.75rem 0.9rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.92rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--secondary);
+        }
+
+        .btn-auth {
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        .btn-auth:hover {
+            background: var(--secondary);
+        }
+
+        .toggle-mode {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 1.2rem;
+        }
+
+        .toggle-mode a {
+            color: var(--secondary);
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .toggle-mode a:hover {
+            text-decoration: underline;
+        }
+
+        .alert-box {
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            display: none;
+            text-align: center;
+        }
+
+        .alert-error {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="portal-header">
+            <h1>🏛️ University Hostel Portal</h1>
+            <p>Sign in to access your housing dashboard</p>
+        </div>
+
+        <!-- Role Selector (Student vs Warden) -->
+        <div class="role-switch">
+            <button class="role-btn active" id="btnStudentRole" onclick="switchRole('student')">👨‍🎓 Student</button>
+            <button class="role-btn" id="btnWardenRole" onclick="switchRole('warden')">🛡️ Warden Desk</button>
+        </div>
+
+        <div id="msgBox" class="alert-box"></div>
+
+        <!-- 1. Student Sign In Section -->
+        <div id="section-student" class="form-section active">
+            <form id="studentLoginForm">
+                <div class="form-group">
+                    <label>University Email</label>
+                    <input type="email" id="studentLoginEmail" placeholder="student@university.edu" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="studentLoginPass" placeholder="••••••••" required>
+                </div>
+                <button type="submit" id="studentLoginBtn" class="btn-auth">Sign In to Student Portal</button>
+            </form>
+
+            <div class="toggle-mode">
+                New resident? <a onclick="toggleAuthMode('register')">Create an Account</a>
+            </div>
+        </div>
+
+        <!-- 2. Student Sign Up / Registration Section -->
+        <div id="section-register" class="form-section">
+            <form id="studentRegisterForm">
+                <div class="form-group">
+                    <label>Student Roll Number</label>
+                    <input type="text" id="regRollNo" placeholder="e.g. 2026CS101" required>
+                </div>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="regFullName" placeholder="e.g. John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label>University Email</label>
+                    <input type="email" id="regEmail" placeholder="student@university.edu" required>
+                </div>
+                <div class="form-group">
+                    <label>Set Password</label>
+                    <input type="password" id="regPass" placeholder="At least 6 characters" required>
+                </div>
+                <button type="submit" id="studentRegisterBtn" class="btn-auth">Create Student Account</button>
+            </form>
+
+            <div class="toggle-mode">
+                Already registered? <a onclick="toggleAuthMode('login')">Sign In</a>
+            </div>
+        </div>
+
+        <!-- 3. Warden / Admin Sign In Section -->
+        <div id="section-warden" class="form-section">
+            <form id="wardenLoginForm">
+                <div class="form-group">
+                    <label>Warden Administrative ID / Email</label>
+                    <input type="email" id="wardenEmail" placeholder="warden@university.edu" required>
+                </div>
+                <div class="form-group">
+                    <label>Administrative Password</label>
+                    <input type="password" id="wardenPass" placeholder="••••••••" required>
+                </div>
+                <button type="submit" id="wardenLoginBtn" class="btn-auth" style="background-color: #0F172A;">Sign In as Warden</button>
+            </form>
+            <div style="font-size: 0.8rem; color: #64748B; text-align: center; margin-top: 1rem;">
+                Authorized personnel only. Access is logged.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Firebase Configuration & Init
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdhh9aoT-pgtW7ZqiIjEpPb9pw8xdGTCI",
+            authDomain: "hostel-portal-f74e2.firebaseapp.com",
+            projectId: "hostel-portal-f74e2",
+            storageBucket: "hostel-portal-f74e2.firebasestorage.app",
+            messagingSenderId: "834609049326",
+            appId: "1:834609049326:web:740e899131a2bd11954dff",
+            measurementId: "G-5ENL3C3MHX"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // UI Helpers
+        const msgBox = document.getElementById('msgBox');
+        function showMsg(text, isError = false) {
+            msgBox.className = 'alert-box ' + (isError ? 'alert-error' : 'alert-success');
+            msgBox.innerText = text;
+            msgBox.style.display = 'block';
+        }
+        function hideMsg() {
+            msgBox.style.display = 'none';
+        }
+
+        function switchRole(role) {
+            hideMsg();
+            document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.form-section').forEach(sec => sec.classList.remove('active'));
+
+            if (role === 'student') {
+                document.getElementById('btnStudentRole').classList.add('active');
+                document.getElementById('section-student').classList.add('active');
+            } else {
+                document.getElementById('btnWardenRole').classList.add('active');
+                document.getElementById('section-warden').classList.add('active');
+            }
+        }
+
+        function toggleAuthMode(mode) {
+            hideMsg();
+            document.querySelectorAll('.form-section').forEach(sec => sec.classList.remove('active'));
+            if (mode === 'register') {
+                document.getElementById('section-register').classList.add('active');
+            } else {
+                document.getElementById('section-student').classList.add('active');
+            }
+        }
+
+        // 2. Student Sign In -> Redirects directly to home.html
+        document.getElementById('studentLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            hideMsg();
+            const email = document.getElementById('studentLoginEmail').value.trim();
+            const pass = document.getElementById('studentLoginPass').value;
+            const btn = document.getElementById('studentLoginBtn');
+
+            btn.disabled = true;
+            btn.innerText = 'Signing in...';
+
+            auth.signInWithEmailAndPassword(email, pass)
+                .then(() => {
+                    window.location.href = 'home.html';
+                })
+                .catch(err => {
+                    showMsg(err.message, true);
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerText = 'Sign In to Student Portal';
+                });
+        });
+
+        // 3. Student Registration -> Creates Account & Redirects to home.html
+        document.getElementById('studentRegisterForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideMsg();
+
+            const rollNo = document.getElementById('regRollNo').value.trim();
+            const fullName = document.getElementById('regFullName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const pass = document.getElementById('regPass').value;
+            const btn = document.getElementById('studentRegisterBtn');
+
+            btn.disabled = true;
+            btn.innerText = 'Creating account...';
+
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                
+                // Save user profile in Firestore
+                await db.collection("users").doc(cred.user.uid).set({
+                    studentId: rollNo,
+                    fullName: fullName,
+                    email: email,
+                    role: 'student',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                showMsg('Account created successfully! Redirecting to Home...', false);
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 1000);
+
+            } catch (err) {
+                showMsg(err.message, true);
+                btn.disabled = false;
+                btn.innerText = 'Create Student Account';
+            }
+        });
+
+        // 4. Warden Sign In -> Redirects to warden.html
+        document.getElementById('wardenLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            hideMsg();
+            const email = document.getElementById('wardenEmail').value.trim();
+            const pass = document.getElementById('wardenPass').value;
+            const btn = document.getElementById('wardenLoginBtn');
+
+            btn.disabled = true;
+            btn.innerText = 'Authenticating...';
+
+            auth.signInWithEmailAndPassword(email, pass)
+                .then(() => {
+                    window.location.href = 'warden.html';
+                })
+                .catch(err => {
+                    showMsg(err.message, true);
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerText = 'Sign In as Warden';
+                });
+        });
+    </script>
+</body>
+</html>
