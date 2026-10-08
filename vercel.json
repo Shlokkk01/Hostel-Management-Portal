@@ -4,9 +4,29 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "home.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "student.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "warden.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/(.*\\.html)",
+      "dest": "$1"
+    },
     {
       "src": "/(.*)",
       "dest": "server.js"
