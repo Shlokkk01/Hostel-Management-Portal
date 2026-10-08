@@ -151,13 +151,9 @@ npm start
 
 ### Deployment
 
-Deploy this repository as a Node.js service using `npm install` to install dependencies and `npm start` to start the app. Set `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME` in the host's environment-variable settings, and make sure the hosted MySQL instance is reachable from the app host. Do not commit database credentials. `PORT` is provided automatically by many app hosts.
+Import this GitHub repository into Vercel and deploy with the included `vercel.json`; no build command is needed. Vercel does not provide a MySQL database. If you use the Express API, add `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME` in the project's Vercel environment-variable settings, and use a separately hosted MySQL database reachable from Vercel. Do not commit database credentials.
 
-For Railway, deploy the GitHub repository as a service; Railway can use the `npm start` script from `package.json`. If you need the MySQL-backed API, add a Railway MySQL service and set the app service's `DB_*` variables to references to the MySQL service's host, port, user, password, and database variables. Replace the service name in each Railway reference with the actual name of your MySQL service.
-
-The included `vercel.json` supports deploying the Express app as a Vercel function. Vercel does not provide the MySQL database, so supply a separately hosted MySQL database and configure the same environment variables there.
-
-The Express API expects a `room_applications` MySQL table with the columns used in `server.js`. The browser-based application also uses Firebase Firestore; configure the Firebase project and its security rules separately.
+The Express API expects a `room_applications` MySQL table with the columns used in `server.js`. The browser-based application also uses Firebase Firestore; configure the Firebase project and its security rules separately. Vercel environment variables apply to new deployments, so redeploy after changing them.
 
 ## 🔌 API Endpoints (Quick Reference)
 
