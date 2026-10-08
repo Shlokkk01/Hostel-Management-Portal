@@ -108,14 +108,14 @@ Transactions (id, user_id, amount, payment_reference, status, created_at)
 
 * **Node.js** `>= 18.x`
 * **npm** `>= 9.x`
-* **Database Instance** (PostgreSQL / MySQL / MongoDB)
+* **MySQL database** for the Express API
 
 ### Installation
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/your-username/hostel-management-system.git
-cd hostel-management-system
+git clone https://github.com/Shlokkk01/Hostel-Management-Portal.git
+cd Hostel-Management-Portal
 
 ```
 
@@ -127,32 +127,20 @@ npm install
 ```
 
 
-3. **Configure Environment Variables:**
-Create a `.env` file in the root directory:
+3. **Configure the MySQL connection:**
+Set these environment variables in your shell or hosting provider:
 ```env
-PORT=5000
-NODE_ENV=development
-DATABASE_URL=postgres://user:password@localhost:5432/hostel_db
-JWT_SECRET=your_super_secret_jwt_key
-JWT_EXPIRATION=7d
+DB_HOST=your-mysql-host
+DB_PORT=3306
+DB_USER=your-mysql-user
+DB_PASSWORD=your-mysql-password
+DB_NAME=hostel_db
 
 ```
 
 
-4. **Run migrations / seed data:**
+4. **Start the application:**
 ```bash
-npm run db:migrate
-npm run db:seed
-
-```
-
-
-5. **Start the application:**
-```bash
-# Development mode with hot reload
-npm run dev
-
-# Production mode
 npm start
 
 ```
@@ -160,6 +148,16 @@ npm start
 
 
 ---
+
+### Deployment
+
+Deploy this repository as a Node.js service using `npm install` to install dependencies and `npm start` to start the app. Set `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME` in the host's environment-variable settings, and make sure the hosted MySQL instance is reachable from the app host. Do not commit database credentials. `PORT` is provided automatically by many app hosts.
+
+For Railway, deploy the GitHub repository as a service; Railway can use the `npm start` script from `package.json`. If you need the MySQL-backed API, add a Railway MySQL service and set the app service's `DB_*` variables to references to the MySQL service's host, port, user, password, and database variables. Replace the service name in each Railway reference with the actual name of your MySQL service.
+
+The included `vercel.json` supports deploying the Express app as a Vercel function. Vercel does not provide the MySQL database, so supply a separately hosted MySQL database and configure the same environment variables there.
+
+The Express API expects a `room_applications` MySQL table with the columns used in `server.js`. The browser-based application also uses Firebase Firestore; configure the Firebase project and its security rules separately.
 
 ## 🔌 API Endpoints (Quick Reference)
 

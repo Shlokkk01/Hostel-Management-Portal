@@ -1,6 +1,3 @@
-Replace `.gitignore` with:
-
-````gitignore
 # Dependencies
 node_modules/
 
@@ -25,4 +22,3 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
-````
